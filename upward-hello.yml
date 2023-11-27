@@ -1,0 +1,94 @@
+status: response.status # [Go to 1]
+headers: response.headers # [Go to 1]
+body: response.body # [Go to 1]
+
+response:
+  when:
+    - matches: request.url.pathname
+      pattern: '^/countries/static'
+      use: countriesStatic # [Go to 3]
+    - matches: request.url.pathname
+      pattern: '^/countries/index'
+      use: countriesRes # [Go to 3]
+    - matches: request.url.pathname
+      pattern: '^/country'
+      use: countryRes # [Go to 3]
+  default: helloWorld # [Go to 4]
+
+pocTemplateIncludes:
+  resolver: directory
+  directory:
+    resolver: inline
+    inline: './templates'
+
+countryRes:
+  inline:
+    status: 200
+    headers:
+      inline:
+        content-type:
+          inline: text/html
+    body:
+      engine: mustache
+      template: './templates/country.mst'
+      provide:
+        countryData: countryData # [Go to 5]
+
+countryData: countryResult.data.country # [Go to 6]
+
+countriesRes:
+  inline:
+    status: 200
+    headers:
+      inline:
+        content-type:
+          inline: text/html
+    body:
+      engine: mustache
+      template: './templates/countries.mst'
+      provide:
+        countriesData: countriesData # [Go to 5]
+
+countriesData: countriesResult.data.countries # [Go to 6]
+
+countriesResult:
+  resolver: 'service'
+  url: env.COUNTRIES_GRAPHQL_URL
+  query:
+    resolver: inline
+    inline: '{
+      countries {
+        name
+      }
+    }'
+
+countryResult:
+  resolver: 'service'
+  url: env.COUNTRIES_GRAPHQL_URL
+  query:
+    resolver: inline
+    inline: '{
+      country ( code: "NL") {
+        name
+      }
+    }'
+
+countriesStatic:
+  inline:
+    status: 200
+    headers:
+      inline:
+        content-type:
+          inline: text/html
+    body:
+      inline: 'Countries static'
+
+helloWorld:
+  inline:
+    status: 200
+    headers:
+      inline:
+        content-type:
+          inline: text/html
+    body:
+      inline: 'Hello world'
